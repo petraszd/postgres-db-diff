@@ -192,7 +192,8 @@ def compare_number_of_items(db1_items, db2_items, items_name):
             print()
 
 
-# TODO: wtf?
+# TODO: Using same function to compare tables and views. It is not very suited
+# for views. But I do not see any clear way to have cleaner interface
 def compare_each_table(db1_tables, db2_tables, items_name):
     not_matching_tables = []
 
