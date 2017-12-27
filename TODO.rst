@@ -1,3 +1,9 @@
+Ideas
+=====
+
+Output formats: json, xml (?), html (?)
+
+
 Objects to compare
 ==================
 

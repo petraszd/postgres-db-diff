@@ -180,16 +180,20 @@ def compare_number_of_items(db1_items, db2_items, items_name):
         additional_db2 = db2_items - db1_items
 
         if additional_db1:
-            print('{}: additional in "{}"'.format(items_name, options.db1))
+            sys.stdout.write(
+                '{}: additional in "{}"\n'.format(items_name, options.db1)
+            )
             for t in additional_db1:
-                print('    {}'.format(t))
-            print()
+                sys.stdout.write('\t{}\n'.format(t))
+            sys.stdout.write('\n')
 
         if additional_db2:
-            print('{}: additional in "{}"'.format(items_name, options.db2))
+            sys.stdout.write(
+                '{}: additional in "{}"\n'.format(items_name, options.db2)
+            )
             for t in additional_db2:
-                print('    {}'.format(t))
-            print()
+                sys.stdout.write('\t{}\n'.format(t))
+            sys.stdout.write('\n')
 
 
 # TODO: Using same function to compare tables and views. It is not very suited
@@ -222,10 +226,10 @@ def compare_each_table(db1_tables, db2_tables, items_name):
                         f.write(diff_line)
 
     if not_matching_tables:
-        print('{}: not matching'.format(items_name))
+        sys.stdout.write('{}: not matching\n'.format(items_name))
         for t in not_matching_tables:
-            print('    {}'.format(t))
-        print()
+            sys.stdout.write('\t{}\n'.format(t))
+        sys.stdout.write('\n')
 
 
 options = parser_arguments()
