@@ -10,7 +10,7 @@ import sys
 
 def check_database_name(name):
     try:
-        out = db_out(name, "SELECT 42")
+        out = db_out(name, "SELECT 42", stderr=None)
     except subprocess.CalledProcessError:
         raise argparse.ArgumentTypeError(
             'Can not access DB using psql. Probably it does not exists.'
@@ -52,9 +52,9 @@ def parser_arguments():
     return parser.parse_args()
 
 
-def db_out(db_name, cmd):
+def db_out(db_name, cmd, stderr=subprocess.STDOUT):
     return subprocess.check_output(
-        "psql -d '{}' -c '{}'".format(db_name, cmd), shell=True
+        "psql -d '{}' -c '{}'".format(db_name, cmd), shell=True, stderr=stderr
     ).decode('utf-8')
 
 
