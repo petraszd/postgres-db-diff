@@ -1,58 +1,67 @@
+import argparse
 import difflib
 import os.path
 import subprocess
 import sys
 
 
-db1_name = sys.argv[1]
-db2_name = sys.argv[2]
-out_dir = sys.argv[3]
+def check_database_name(name):
+    try:
+        out = db_out(name, "SELECT 42")
+    except subprocess.CalledProcessError:
+        raise argparse.ArgumentTypeError(
+            'Can not access DB using psql. Probably it does not exists.'
+        )
+
+    if '42' not in out:
+        raise argparse.ArgumentTypeError(
+            'Unknown problem executing SQL statements using psql. Aborting.'
+        )
+
+    return name
+
+
+def check_diff_directory(name):
+    path = os.path.join(name)
+    if not os.path.exists(path):
+        return name
+
+    if not os.path.isdir(path):
+        raise argparse.ArgumentTypeError('It is not a directory')
+
+    if os.listdir(path):
+        raise argparse.ArgumentTypeError('Directory must be empty')
+
+    return name
+
+
+def parser_arguments():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--db1', help='First DB name',
+                        type=check_database_name, required=True)
+    parser.add_argument('--db2', help='Second DB name',
+                        type=check_database_name, required=True)
+    parser.add_argument('--tdiff', help='Directory to output tables\'s diffs',
+                        type=check_diff_directory, required=False)
+
+    return parser.parse_args()
 
 
 def db_out(db_name, cmd):
     return subprocess.check_output(
         "psql -d '{}' -c '{}'".format(db_name, cmd), shell=True
-    )
+    ).decode('utf-8')
 
 
-def get_db_objects(db_name):
-    tables = []
-    sequences = []
-    for line in db_out(db_name, '\\d').splitlines():
+def get_db_tables(db_name):
+    tables = set()
+    for line in db_out(db_name, '\\dt').splitlines():
         elems = line.split()
         if line and elems[0] == 'public':
             if elems[4] == 'table':
-                tables.append(elems[2])
-            elif elems[4] == 'sequence':
-                sequences.append(elems[2])
-    return set(tables), set(sequences)
-
-
-def replace_with_sorted(lines, a, b):
-    if a is None or b is None:
-        return lines
-    return lines[:a] + sorted(lines[a:b]) + lines[b:]
-
-
-S_START = 1
-S_COLUMNS = 2
-S_INDEXES = 3
-S_CHECK_CONSTR = 4
-S_FOREIGN_CONSTR = 5
-S_REFERENCES = 6
-S_END = 7
-
-
-def get_after_columns_state(x):
-    if x == 'Indexes:':
-        return S_INDEXES
-    elif x == 'Check constraints:':
-        return S_CHECK_CONSTR
-    elif x == 'Foreign-key constraints:':
-        return S_FOREIGN_CONSTR
-    elif x == 'Referenced by:':
-        return S_REFERENCES
-    return S_END
+                tables.add(elems[2])
+    return tables
 
 
 def update_range(line_range, i):
@@ -72,6 +81,30 @@ def get_table_definition(db_name, table_name):
     check_constr_range = [None, None]
     foreign_constr_range = [None, None]
     process_constr_range = [None, None]
+
+    S_START = 1
+    S_COLUMNS = 2
+    S_INDEXES = 3
+    S_CHECK_CONSTR = 4
+    S_FOREIGN_CONSTR = 5
+    S_REFERENCES = 6
+    S_END = 7
+
+    def replace_with_sorted(lines, a, b):
+        if a is None or b is None:
+            return lines
+        return lines[:a] + sorted(lines[a:b]) + lines[b:]
+
+    def get_after_columns_state(x):
+        if x == 'Indexes:':
+            return S_INDEXES
+        elif x == 'Check constraints:':
+            return S_CHECK_CONSTR
+        elif x == 'Foreign-key constraints:':
+            return S_FOREIGN_CONSTR
+        elif x == 'Referenced by:':
+            return S_REFERENCES
+        return S_END
 
     def process_start(i, x):
         if x[0:2] == '--':
@@ -133,55 +166,59 @@ def get_table_definition(db_name, table_name):
     return '\n'.join(lines)
 
 
-db1_tables, db1_sequences = get_db_objects(db1_name)
-db2_tables, db2_sequences = get_db_objects(db2_name)
-
-
-def compare_number_of_tables():
+def compare_number_of_tables(db1_tables, db2_tables):
     if db1_tables != db2_tables:
         additional_db1 = db1_tables - db2_tables
         additional_db2 = db2_tables - db1_tables
 
         if additional_db1:
-            # TODO: use stdout ?
-            print('"{}" has additional tables'.format(db1_name))
+            print('"{}" has additional tables'.format(options.db1))
             for t in additional_db1:
                 print('    {}'.format(t))
             print()
 
         if additional_db2:
-            print('"{}" has additional tables'.format(db2_name))
+            print('"{}" has additional tables'.format(options.db2))
             for t in additional_db2:
                 print('    {}'.format(t))
             print()
 
 
-def compare_each_table():
+def compare_each_table(db1_tables, db2_tables):
     not_matching_tables = []
 
     for t in sorted(db1_tables & db2_tables):
-        t1 = get_table_definition(db1_name, t)
-        t2 = get_table_definition(db2_name, t)
+        t1 = get_table_definition(options.db1, t)
+        t2 = get_table_definition(options.db2, t)
         if t1 != t2:
             not_matching_tables.append(t)
 
             diff = difflib.unified_diff(
                 [x + '\n' for x in t1.splitlines()],
                 [x + '\n' for x in t2.splitlines()],
-                '{}.{}'.format(db1_name, t),
-                '{}.{}'.format(db2_name, t),
-                n=10000  # TODO: max int
+                '{}.{}'.format(options.db1, t),
+                '{}.{}'.format(options.db2, t),
+                n=sys.maxsize
             )
 
-            with open(os.path.join(out_dir, '{}.diff'.format(t)), 'w') as f:
-                for diff_line in diff:
-                    f.write(diff_line)
+            if options.tdiff:
+                if not os.path.exists(options.tdiff):
+                    os.mkdir(options.tdiff)
+                filepath = os.path.join(options.tdiff, '{}.diff'.format(t))
+                with open(filepath, 'w') as f:
+                    for diff_line in diff:
+                        f.write(diff_line)
 
     if not_matching_tables:
         print('Not matching tables:')
         for t in not_matching_tables:
-            print('    {}'.format(t))  # TODO: use stdout ?
+            print('    {}'.format(t))
 
 
-compare_number_of_tables()
-compare_each_table()
+options = parser_arguments()
+
+db1_tables = get_db_tables(options.db1)
+db2_tables = get_db_tables(options.db2)
+
+compare_number_of_tables(db1_tables, db2_tables)
+compare_each_table(db1_tables, db2_tables)

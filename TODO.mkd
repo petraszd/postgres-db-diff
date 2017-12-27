@@ -9,6 +9,7 @@
 - Rewrite rules (TODO: check WTF is that?)
 - Sequences
 
+
 # Views
 
 \dv
@@ -17,7 +18,6 @@
 # Functions
 
 \df+
-
 
 
 # Triggers
