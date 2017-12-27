@@ -14,7 +14,7 @@ setup(
     description='Command line tool to compare two PostgreSQL databases',
     long_description=long_description,
     url='https://github.com/petraszd/postgres-db-diff',
-    author='Petras Zdanavičius',
+    author='Petras Zdanavicius',
     author_email='petraszd@gmail.com',
 
 
@@ -26,7 +26,9 @@ setup(
         'test': [],
     },
 
-    scripts=['postgresdbdiff'],
+    entry_points={
+        'console_scripts': ['postgres-db-diff=postgresdbdiff:main'],
+    },
 
     classifiers=[
         'Environment :: Console',
