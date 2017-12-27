@@ -1,4 +1,5 @@
-# Objects to compare
+Objects to compare
+==================
 
 + Tables
 + Views
@@ -10,29 +11,35 @@
 - Sequences
 
 
-# Functions
+Functions
+=========
 
 \df+
 
 
-# Triggers
+Triggers
+========
 
 \dy+
 
 CREATE EVENT TRIGGER
 
 
-# CMD Options
+CMD Options
+===========
 
 -- Normalize constrain names
 
 
-# Aggregates
+Aggregates
+==========
 
 CREATE AGGREGATE foo
 
 
-# User-defined Types
+User-defined Types
+==================
 
 
-# User-defined Operators
+User-defined Operators
+======================
