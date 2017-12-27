@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # If you are reading this code and thinking: why this file have not been
 # split into smaller and easier to read modules? The answer is quite simple:
 # I want users to be able just copy/paste this file and run it
@@ -235,13 +237,17 @@ def compare_each_table(db1_tables, db2_tables, items_name):
         sys.stdout.write('\n')
 
 
-options = parser_arguments()
+if __name__ == "__main__":
+    # TODO: probably I should not use options as global variable
+    options = parser_arguments()
 
-db1_tables, db2_tables = get_db_tables(options.db1), get_db_tables(options.db2)
+    db1_tables = get_db_tables(options.db1)
+    db2_tables = get_db_tables(options.db2)
 
-compare_number_of_items(db1_tables, db2_tables, 'TABLES')
-compare_each_table(db1_tables, db2_tables, 'TABLES')
+    compare_number_of_items(db1_tables, db2_tables, 'TABLES')
+    compare_each_table(db1_tables, db2_tables, 'TABLES')
 
-db1_views, db2_views = get_db_views(options.db1), get_db_views(options.db2)
-compare_number_of_items(db1_views, db2_views, 'VIEWS')
-compare_each_table(db1_views, db2_views, 'VIEWS')
+    db1_views = get_db_views(options.db1)
+    db2_views = get_db_views(options.db2)
+    compare_number_of_items(db1_views, db2_views, 'VIEWS')
+    compare_each_table(db1_views, db2_views, 'VIEWS')

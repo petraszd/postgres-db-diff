@@ -17,6 +17,17 @@ setup(
     author='Petras Zdanavičius',
     author_email='petraszd@gmail.com',
 
+
+    keywords='postgresql database comparison command line utility',
+    packages=find_packages(exclude=['contrib', 'docs', 'tests']),
+    install_requires=[],
+    extras_require={
+        'dev': [],
+        'test': [],
+    },
+
+    scripts=['postgresdbdiff'],
+
     classifiers=[
         'Environment :: Console',
         'License :: OSI Approved :: MIT License',
@@ -30,19 +41,4 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
     ],
-
-    keywords='postgres comparison',
-    packages=find_packages(exclude=['contrib', 'docs', 'tests']),
-    install_requires=[],
-    extras_require={
-        'dev': [],
-        'test': [],
-    },
-
-    # TODO: use this
-    # entry_points={
-        # 'console_scripts': [
-            # 'sample=sample:main',
-        # ],
-    # },
 )
