@@ -42,7 +42,8 @@ def parser_arguments():
                         type=check_database_name, required=True)
     parser.add_argument('--db2', help='Second DB name',
                         type=check_database_name, required=True)
-    parser.add_argument('--tdiff', help='Directory to output tables\'s diffs',
+    parser.add_argument('--diff-folder',
+                        help='Directory to output diffs',
                         type=check_diff_directory, required=False)
 
     return parser.parse_args()
@@ -59,17 +60,17 @@ def get_db_tables(db_name):
     for line in db_out(db_name, '\\dt').splitlines():
         elems = line.split()
         if line and elems[0] == 'public':
-            if elems[4] == 'table':
-                tables.add(elems[2])
+            tables.add(elems[2])
     return tables
 
 
-def update_range(line_range, i):
-    if line_range[0] is None:
-        line_range[0] = i
-        line_range[1] = i + 1
-    else:
-        line_range[1] = i + 1
+def get_db_views(db_name):
+    views = set()
+    for line in db_out(db_name, '\\dv').splitlines():
+        elems = line.split()
+        if line and elems[0] == 'public':
+            views.add(elems[2])
+    return views
 
 
 def get_table_definition(db_name, table_name):
@@ -105,6 +106,13 @@ def get_table_definition(db_name, table_name):
         elif x == 'Referenced by:':
             return S_REFERENCES
         return S_END
+
+    def update_range(line_range, i):
+        if line_range[0] is None:
+            line_range[0] = i
+            line_range[1] = i + 1
+        else:
+            line_range[1] = i + 1
 
     def process_start(i, x):
         if x[0:2] == '--':
@@ -166,25 +174,26 @@ def get_table_definition(db_name, table_name):
     return '\n'.join(lines)
 
 
-def compare_number_of_tables(db1_tables, db2_tables):
-    if db1_tables != db2_tables:
-        additional_db1 = db1_tables - db2_tables
-        additional_db2 = db2_tables - db1_tables
+def compare_number_of_items(db1_items, db2_items, items_name):
+    if db1_items != db2_items:
+        additional_db1 = db1_items - db2_items
+        additional_db2 = db2_items - db1_items
 
         if additional_db1:
-            print('"{}" has additional tables'.format(options.db1))
+            print('{}: additional in "{}"'.format(items_name, options.db1))
             for t in additional_db1:
                 print('    {}'.format(t))
             print()
 
         if additional_db2:
-            print('"{}" has additional tables'.format(options.db2))
+            print('{}: additional in "{}"'.format(items_name, options.db2))
             for t in additional_db2:
                 print('    {}'.format(t))
             print()
 
 
-def compare_each_table(db1_tables, db2_tables):
+# TODO: wtf?
+def compare_each_table(db1_tables, db2_tables, items_name):
     not_matching_tables = []
 
     for t in sorted(db1_tables & db2_tables):
@@ -196,29 +205,35 @@ def compare_each_table(db1_tables, db2_tables):
             diff = difflib.unified_diff(
                 [x + '\n' for x in t1.splitlines()],
                 [x + '\n' for x in t2.splitlines()],
-                '{}.{}'.format(options.db1, t),
-                '{}.{}'.format(options.db2, t),
+                '{}.{}.{}'.format(items_name, options.db1, t),
+                '{}.{}.{}'.format(items_name, options.db2, t),
                 n=sys.maxsize
             )
 
-            if options.tdiff:
-                if not os.path.exists(options.tdiff):
-                    os.mkdir(options.tdiff)
-                filepath = os.path.join(options.tdiff, '{}.diff'.format(t))
+            if options.diff_folder:
+                if not os.path.exists(options.diff_folder):
+                    os.mkdir(options.diff_folder)
+                filepath = os.path.join(
+                    options.diff_folder, '{}.diff'.format(t)
+                )
                 with open(filepath, 'w') as f:
                     for diff_line in diff:
                         f.write(diff_line)
 
     if not_matching_tables:
-        print('Not matching tables:')
+        print('{}: not matching'.format(items_name))
         for t in not_matching_tables:
             print('    {}'.format(t))
+        print()
 
 
 options = parser_arguments()
 
-db1_tables = get_db_tables(options.db1)
-db2_tables = get_db_tables(options.db2)
+db1_tables, db2_tables = get_db_tables(options.db1), get_db_tables(options.db2)
 
-compare_number_of_tables(db1_tables, db2_tables)
-compare_each_table(db1_tables, db2_tables)
+compare_number_of_items(db1_tables, db2_tables, 'TABLES')
+compare_each_table(db1_tables, db2_tables, 'TABLES')
+
+db1_views, db2_views = get_db_views(options.db1), get_db_views(options.db2)
+compare_number_of_items(db1_views, db2_views, 'VIEWS')
+compare_each_table(db1_views, db2_views, 'VIEWS')
