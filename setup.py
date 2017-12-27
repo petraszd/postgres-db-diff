@@ -1,6 +1,6 @@
 import codecs
 import os.path
-from setuptools import setup, find_packages
+from setuptools import setup
 
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -10,7 +10,7 @@ with codecs.open(os.path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='postgres-db-diff',
-    version='0.9',  # cause triggers, sequences are missing
+    version='0.9.1',  # cause triggers, sequences are missing
     description='Command line tool to compare two PostgreSQL databases',
     long_description=long_description,
     url='https://github.com/petraszd/postgres-db-diff',
@@ -19,7 +19,8 @@ setup(
 
 
     keywords='postgresql database comparison command line utility',
-    packages=find_packages(exclude=['contrib', 'docs', 'tests']),
+    # packages=find_packages(exclude=['contrib', 'docs', 'tests']),
+    py_modules=['postgresdbdiff'],
     install_requires=[],
     extras_require={
         'dev': [],

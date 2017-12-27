@@ -2,3 +2,4 @@ env
 *.pyc
 postgres_db_diff.egg-info/*
 dist/*
+build/*

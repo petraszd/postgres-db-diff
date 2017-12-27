@@ -179,7 +179,7 @@ def get_table_definition(db_name, table_name):
     return '\n'.join(lines)
 
 
-def compare_number_of_items(db1_items, db2_items, items_name):
+def compare_number_of_items(options, db1_items, db2_items, items_name):
     if db1_items != db2_items:
         additional_db1 = db1_items - db2_items
         additional_db2 = db2_items - db1_items
@@ -203,7 +203,7 @@ def compare_number_of_items(db1_items, db2_items, items_name):
 
 # TODO: Using same function to compare tables and views. It is not very suited
 # for views. But I do not see any clear way to have cleaner interface
-def compare_each_table(db1_tables, db2_tables, items_name):
+def compare_each_table(options, db1_tables, db2_tables, items_name):
     not_matching_tables = []
 
     for t in sorted(db1_tables & db2_tables):
@@ -237,17 +237,20 @@ def compare_each_table(db1_tables, db2_tables, items_name):
         sys.stdout.write('\n')
 
 
-if __name__ == "__main__":
-    # TODO: probably I should not use options as global variable
+def main():
     options = parser_arguments()
 
     db1_tables = get_db_tables(options.db1)
     db2_tables = get_db_tables(options.db2)
 
-    compare_number_of_items(db1_tables, db2_tables, 'TABLES')
-    compare_each_table(db1_tables, db2_tables, 'TABLES')
+    compare_number_of_items(options, db1_tables, db2_tables, 'TABLES')
+    compare_each_table(options, db1_tables, db2_tables, 'TABLES')
 
     db1_views = get_db_views(options.db1)
     db2_views = get_db_views(options.db2)
-    compare_number_of_items(db1_views, db2_views, 'VIEWS')
-    compare_each_table(db1_views, db2_views, 'VIEWS')
+    compare_number_of_items(options, db1_views, db2_views, 'VIEWS')
+    compare_each_table(options, db1_views, db2_views, 'VIEWS')
+
+
+if __name__ == "__main__":
+    main()
