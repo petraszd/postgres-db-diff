@@ -1,6 +1,15 @@
 Postgres DB diff
 ================
 
+PyPi
+----
+
+https://pypi.python.org/pypi/postgres-db-diff/
+
+
+About
+-----
+
 Command line tool to compare two PostgreSQL databases. It is based on parsing
 ``psql`` meta commands output. Such as ``\dt`` for tables and ``\dv`` for
 views.
@@ -9,7 +18,7 @@ https://www.postgresql.org/docs/current/static/app-psql.html
 
 
 How to install
-==============
+--------------
 
 There are two options:
 
@@ -18,7 +27,7 @@ There are two options:
 
 
 Usage
-=====
+-----
 
 ::
 
@@ -34,7 +43,7 @@ Usage
 
 
 Example
-=======
+-------
 
 Create two DBs. One using this SQL:
 
