@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# https://raw.githubusercontent.com/petraszd/postgres-db-diff/master/postgresdbdiff.py
+
 # If you are reading this code and thinking: why this file have not been
 # split into smaller and easier to read modules? The answer is quite simple:
 # I want users to be able just copy/paste this file and run it
@@ -50,6 +52,9 @@ def parser_arguments():
     parser.add_argument('--diff-folder',
                         help='Directory to output diffs',
                         type=check_diff_directory, required=False)
+    parser.add_argument('--rowcount',
+                        help='Compare tables row count',
+                        action='store_true')
 
     return parser.parse_args()
 
@@ -58,6 +63,14 @@ def db_out(db_name, cmd, stderr=subprocess.STDOUT):
     return subprocess.check_output(
         "psql -d '{}' -c '{}'".format(db_name, cmd), shell=True, stderr=stderr
     ).decode('utf-8')
+
+
+def get_table_rowcount(db_name, table_name, stderr=subprocess.STDOUT):
+    cmd = 'select count(1) from "{}";'.format(table_name)
+    output = subprocess.check_output(
+        "psql -d '{}' -c '{}' --quiet --tuples-only".format(db_name, cmd), shell=True, stderr=stderr
+    ).decode('utf-8')
+    return int(output.strip())
 
 
 def get_db_tables(db_name):
@@ -205,6 +218,7 @@ def compare_number_of_items(options, db1_items, db2_items, items_name):
 # for views. But I do not see any clear way to have cleaner interface
 def compare_each_table(options, db1_tables, db2_tables, items_name):
     not_matching_tables = []
+    not_matching_rowcount = []
 
     for t in sorted(db1_tables & db2_tables):
         t1 = get_table_definition(options.db1, t)
@@ -230,9 +244,21 @@ def compare_each_table(options, db1_tables, db2_tables, items_name):
                     for diff_line in diff:
                         f.write(diff_line)
 
+        else:
+            t1_rowcount = get_table_rowcount(options.db1, t)
+            t2_rowcount = get_table_rowcount(options.db2, t)
+            if t1_rowcount != t2_rowcount:
+                not_matching_rowcount.append('{} ({} != {})'.format(t, t1_rowcount, t2_rowcount))
+
     if not_matching_tables:
         sys.stdout.write('{}: not matching\n'.format(items_name))
         for t in not_matching_tables:
+            sys.stdout.write('\t{}\n'.format(t))
+        sys.stdout.write('\n')
+
+    if not_matching_rowcount:
+        sys.stdout.write('{}: not matching rowcount\n'.format(items_name))
+        for t in not_matching_rowcount:
             sys.stdout.write('\t{}\n'.format(t))
         sys.stdout.write('\n')
 
