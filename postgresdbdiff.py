@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-# https://raw.githubusercontent.com/petraszd/postgres-db-diff/master/postgresdbdiff.py
-
 # If you are reading this code and thinking: why this file have not been
 # split into smaller and easier to read modules? The answer is quite simple:
 # I want users to be able just copy/paste this file and run it
