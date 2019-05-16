@@ -89,6 +89,15 @@ def get_db_views(db_name):
     return views
 
 
+def get_db_mat_views(db_name):
+    views = set()
+    for line in db_out(db_name, '\\dmv').splitlines():
+        elems = line.split()
+        if line and elems[0] == 'public':
+            views.add(elems[2])
+    return views
+
+
 def get_table_definition(db_name, table_name):
     lines = db_out(db_name, '\\d "{}"'.format(table_name)).splitlines()
     lines = [x for x in lines if x.strip()]
@@ -274,6 +283,11 @@ def main():
     db2_views = get_db_views(options.db2)
     compare_number_of_items(options, db1_views, db2_views, 'VIEWS')
     compare_each_table(options, db1_views, db2_views, 'VIEWS')
+    
+    db1_views = get_db_mat_views(options.db1)
+    db2_views = get_db_mat_views(options.db2)
+    compare_number_of_items(options, db1_views, db2_views, 'MATERIALIZED VIEWS')
+    compare_each_table(options, db1_views, db2_views, 'MATERIALIZED VIEWS')
 
 
 if __name__ == "__main__":
