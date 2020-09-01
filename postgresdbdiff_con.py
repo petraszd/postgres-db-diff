@@ -63,14 +63,14 @@ def parser_arguments():
 
 def db_out(url, cmd, stderr=subprocess.STDOUT):
     return subprocess.check_output(
-        "psql {0} -c '{1}'".format(url, cmd), shell=True, stderr=stderr
+        'psql -c "{0}" {1}'.format(cmd, url), shell=True, stderr=stderr
     ).decode('utf-8')
 
 
 def get_table_rowcount(url, schema, table_name, stderr=subprocess.STDOUT):
     cmd = 'select count(1) from "{0}.{1}";'.format(schema, table_name)
     output = subprocess.check_output(
-        "psql {0} -c '{1}' --quiet --tuples-only".format(url, cmd), shell=True, stderr=stderr
+        'psql -c "{0}" --quiet --tuples-only {1}'.format(cmd, url), shell=True, stderr=stderr
     ).decode('utf-8')
     return int(output.strip())
 
@@ -103,7 +103,22 @@ def get_db_mat_views(db_name, schema):
 
 
 def get_table_definition(db_name, schema, table_name):
-    lines = db_out(db_name, '\\d {0}.{1}'.format(schema,table_name)).splitlines()
+    ## lines = db_out(db_name, '\\d {0}.{1}'.format(schema,table_name)).splitlines()
+    temps = db_out(db_name, '\\d {0}.{1}'.format(schema,table_name)).splitlines()
+    lines = []
+    for line in temps:
+        line = line.replace(schema + '.', '')
+        if re.match(r'.*tablespace ".*".*', line):
+            line = re.sub(r'(.*tablespace ").*(".*)',r'\1\2',line)
+        if re.match(r'.*Tablespace: ".*".*', line):
+            line = re.sub(r'(.*Tablespace: ").*(".*)',r'\1\2',line)
+        if re.match(r'.*Table ".*".*', line):
+            line = line.strip()
+        lines.append(line)
+    lines = [x for x in lines if x.strip()]
+
+    print(f"get_table_definition: {schema}.{table_name}")
+    
     lines = [x for x in lines if x.strip()]
 
     columns_range = [None, None]
